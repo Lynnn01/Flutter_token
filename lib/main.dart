@@ -36,7 +36,7 @@ class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
-  String _token = '';
+  bool _obscureText = true;
 
   @override
   void dispose() {
@@ -61,29 +61,104 @@ class _LoginPageState extends State<LoginPage> {
 
         if (response.statusCode == 200) {
           final responseData = jsonDecode(response.body);
-          setState(() {
-            _token = responseData['token'] ?? 'No token received';
-          });
+          final token = responseData['token'] ?? 'No token received';
           if (kDebugMode) {
-            print('Login successful: $_token');
+            print('Login successful: $token');
           }
+          _showTokenDialog(token, isSuccess: true);
         } else {
-          setState(() {
-            _token = 'Login failed: ${response.body}';
-          });
           if (kDebugMode) {
             print('Login failed: ${response.body}');
           }
+          _showTokenDialog('Login failed: ${response.body}', isSuccess: false);
         }
       } catch (e) {
-        setState(() {
-          _token = 'Error during login: $e';
-        });
         if (kDebugMode) {
           print('Error during login: $e');
         }
+        _showTokenDialog('Error during login: $e', isSuccess: false);
       }
     }
+  }
+
+  void _showTokenDialog(String message, {required bool isSuccess}) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          elevation: 0,
+          backgroundColor: Colors.transparent,
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.rectangle,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: const [
+                BoxShadow(
+                  color: Colors.black26,
+                  blurRadius: 10.0,
+                  offset: Offset(0.0, 10.0),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: isSuccess ? Colors.green : Colors.red,
+                  ),
+                  child: Icon(
+                    isSuccess ? Icons.check : Icons.close,
+                    color: Colors.white,
+                    size: 32,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  isSuccess ? 'Login Successful' : 'Login Failed',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: isSuccess ? Colors.green : Colors.red,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  message,
+                  style: const TextStyle(fontSize: 16),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.yellow[700],
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 30, vertical: 12),
+                  ),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text(
+                    'Close',
+                    style: TextStyle(fontSize: 16, color: Colors.white),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -150,12 +225,6 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                Text(
-                  'Token: $_token',
-                  style: const TextStyle(fontSize: 14, color: Colors.black87),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 24),
                 const Text(
                   'Or continue with',
                   textAlign: TextAlign.center,
@@ -203,11 +272,24 @@ class _LoginPageState extends State<LoginPage> {
       ),
       child: TextFormField(
         controller: controller,
-        obscureText: isPassword,
+        obscureText: isPassword ? _obscureText : false,
         validator: validator,
         decoration: InputDecoration(
           hintText: hint,
           prefixIcon: Icon(icon, color: Colors.grey[600]),
+          suffixIcon: isPassword
+              ? IconButton(
+                  icon: Icon(
+                    _obscureText ? Icons.visibility : Icons.visibility_off,
+                    color: Colors.grey[600],
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _obscureText = !_obscureText;
+                    });
+                  },
+                )
+              : null,
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(vertical: 16),
           errorStyle: const TextStyle(height: 0),
