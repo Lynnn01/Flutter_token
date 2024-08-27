@@ -4,6 +4,8 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'register.dart';
+import 'profile.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() => runApp(const MyApp());
 
@@ -19,9 +21,51 @@ class MyApp extends StatelessWidget {
         visualDensity: VisualDensity.adaptivePlatformDensity,
         fontFamily: 'Roboto',
       ),
-      home: const LoginPage(),
+      home: const RootPage(), // Start with a new RootPage
       debugShowCheckedModeBanner: false,
     );
+  }
+}
+
+class RootPage extends StatefulWidget {
+  const RootPage({super.key});
+
+  @override
+  // ignore: library_private_types_in_public_api
+  _RootPageState createState() => _RootPageState();
+}
+
+class _RootPageState extends State<RootPage> {
+  @override
+  void initState() {
+    super.initState();
+    _checkToken();
+  }
+
+  Future<void> _checkToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token') ?? '';
+
+    if (token.isNotEmpty) {
+      // Token exists, navigate to ProfilePage
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => const ProfilePage()),
+      );
+    } else {
+      // No token, navigate to LoginPage
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => const LoginPage()),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      body: Center(
+        child: CircularProgressIndicator(),
+      ),
+    ); // Show a loading spinner while checking for the token
   }
 }
 
@@ -66,6 +110,9 @@ class _LoginPageState extends State<LoginPage> {
           if (kDebugMode) {
             print('Login successful: $token');
           }
+          // Save token
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('token', token);
           _showTokenDialog(token, isSuccess: true);
         } else {
           if (kDebugMode) {
@@ -148,10 +195,17 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   onPressed: () {
                     Navigator.of(context).pop();
+                    if (isSuccess) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const ProfilePage()),
+                      );
+                    }
                   },
-                  child: const Text(
-                    'Close',
-                    style: TextStyle(fontSize: 16, color: Colors.white),
+                  child: Text(
+                    isSuccess ? 'Profile' : 'Close',
+                    style: const TextStyle(fontSize: 16, color: Colors.white),
                   ),
                 ),
               ],
