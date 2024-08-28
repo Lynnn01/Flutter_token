@@ -49,7 +49,7 @@ class _ProfilePageState extends State<ProfilePage> {
       final userData = jsonDecode(response.body);
 
       setState(() {
-        _userId = userData['userId'] ?? ''; // Check for null
+        _userId = userData['_id'] ?? ''; // Check for null
         _fnameController.text = userData['fname'] ?? ''; // Check for null
         _lnameController.text = userData['lname'] ?? ''; // Check for null
         username = userData['username'] ?? ''; // Check for null
@@ -130,10 +130,7 @@ class _ProfilePageState extends State<ProfilePage> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
+        leading: const Icon(Icons.account_circle_outlined),
         title: const Text('Profile', style: TextStyle(color: Colors.black)),
       ),
       body: SafeArea(
